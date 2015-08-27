@@ -14,6 +14,7 @@ fn main() {
         match lambed::parser::parse_string(&string) {
             Err(err) => println!("{:?}", err),
             Ok((term, _)) => {
+                println!("{:?}", term);
                 let mut context = lambed::eval::Context::new();
                 let result = lambed::eval::eval(&mut context, term);
                 match result {
