@@ -1,7 +1,6 @@
 #[derive (Debug, PartialEq)]
 pub enum Primitive {
     Integer(i64),
-    Float(f64),
     String(String)
 }
 
@@ -17,10 +16,6 @@ impl Term {
 
     pub fn val_int(x: i64) -> Term {
         Term::Val(Primitive::Integer(x))
-    }
-
-    pub fn val_float(x: f64) -> Term {
-        Term::Val(Primitive::Float(x))
     }
 
     pub fn val_string(x: String) -> Term {
