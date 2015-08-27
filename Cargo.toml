@@ -5,6 +5,7 @@ authors = ["Sam Rijs <srijs@airpost.net>"]
 
 [dependencies]
 combine = "1.0.0"
+fixpoint = "0.1.0"
 
 [dependencies.readline]
 version = "0.0.11"

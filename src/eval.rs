@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use fixpoint::{Fix, fix_result};
+
 use super::term::{Primitive, Term};
 
 #[derive (Debug, PartialEq, Eq)]
@@ -58,44 +60,7 @@ impl ArgStack {
 
 }
 
-enum Fix<A> {
-    Pro(A),
-    Fix(A)
-}
-
-impl<A> Fix<A> {
-    fn map<B, F: FnOnce(A) -> B>(self, f: F) -> Fix<B> {
-        match self {
-            Fix::Pro(a) => Fix::Pro(f(a)),
-            Fix::Fix(a) => Fix::Fix(f(a))
-        }
-    }
-}
-
 type EvalResult = Result<Fix<Term>, EvalError>;
-
-fn fix<A, F: FnMut(A) -> Fix<A>>(a: A, f: F) -> A {
-    let mut current = a;
-    let mut g = f;
-    loop {
-        match g(current) {
-            Fix::Fix(a) => return a,
-            Fix::Pro(a) => current = a
-        }
-    }
-}
-
-fn fix_result<A, E, F: FnMut(A) -> Result<Fix<A>, E>>(a: A, f: F) -> Result<A, E> {
-    let mut current = a;
-    let mut g = f;
-    loop {
-        match g(current) {
-            Result::Err(err) => return Result::Err(err),
-            Result::Ok(Fix::Fix(a)) => return Result::Ok(a),
-            Result::Ok(Fix::Pro(a)) => current = a
-        }
-    }
-}
 
 fn eval_shallow(ctx: &mut Context, args: &mut ArgStack, term: Term) -> EvalResult {
     match term {
