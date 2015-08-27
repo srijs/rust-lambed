@@ -1,8 +1,11 @@
+#[cfg(feature = "readline")]
 extern crate readline;
 extern crate lambed;
 
+#[cfg(feature = "readline")]
 use std::ffi::CString;
 
+#[cfg(feature = "readline")]
 fn main() {
     let prompt = CString::new("> ").unwrap();
     while let Ok(s) = readline::readline(&prompt) {
