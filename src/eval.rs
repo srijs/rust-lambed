@@ -66,10 +66,7 @@ fn eval_shallow(ctx: &mut Context, args: &mut ArgStack, term: Term) -> EvalResul
     match term {
         Term::Val(val) => Result::Ok(Fix::Fix(Term::Val(val))),
         Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
-        Term::Ref(id) => match ctx.lookup(id) {
-            Result::Err(err) => Result::Err(EvalError::ReferenceError(err)),
-            Result::Ok(term) => Result::Ok(Fix::Pro(term))
-        },
+        Term::Ref(id) => ctx.lookup(id).map(Fix::Pro).map_err(EvalError::ReferenceError),
         Term::App(fun_box, arg_box) => {
             let fun: Term = *fun_box;
             match fun {
