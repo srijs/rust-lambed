@@ -11,7 +11,8 @@ pub enum TypeError { NotAFunction(Primitive) }
 #[derive (Debug, PartialEq, Eq)]
 pub enum EvalError {
     ReferenceError(ReferenceError),
-    TypeError(TypeError)
+    TypeError(TypeError),
+    StackOverflow
 }
 
 pub struct Context(HashMap<String, Term>);
@@ -34,7 +35,7 @@ impl Context {
 
 fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, EvalError> {
     if depth == 0 {
-        return Result::Ok(term)
+        return Result::Err(EvalError::StackOverflow)
     }
     match term {
         Term::Val(val) => Result::Ok(Term::Val(val)),
@@ -64,7 +65,7 @@ pub fn eval(ctx: &mut Context, term: Term) -> Result<Term, EvalError> {
         match current_term {
             Term::Val(val) => return Result::Ok(Term::Val(val)),
             Term::Abs(id, term) => return Result::Ok(Term::Abs(id, term)),
-            term => current_term = try!(eval_shallow(ctx, term, 2))
+            term => current_term = try!(eval_shallow(ctx, term, 255))
         }
     }
 }
