@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use super::term::{Primitive, Term};
 
-use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, spaces, char, digit, many1, alpha_num, parser};
+use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, sep_by, letter, spaces, char, digit, many, many1, alpha_num, parser};
 use combine::primitives::{Stream};
 
 fn token_left_paren<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
@@ -21,6 +21,14 @@ fn token_right_brace<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I
     char('}').map(|_| ()).skip(spaces()).parse_state(input)
 }
 
+fn token_bar<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
+    char('|').map(|_| ()).skip(spaces()).parse_state(input)
+}
+
+fn token_comma<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
+    char(',').map(|_| ()).skip(spaces()).parse_state(input)
+}
+
 fn token_integer<I: Stream<Item=char>>(input: State<I>) -> ParseResult<i64, I> {
     many1::<Vec<char>, _>(digit()).map(|s| {
         let string: String = FromIterator::from_iter(s);
@@ -29,7 +37,7 @@ fn token_integer<I: Stream<Item=char>>(input: State<I>) -> ParseResult<i64, I> {
 }
 
 fn token_identifier<I: Stream<Item=char>>(input: State<I>) -> ParseResult<String, I> {
-    many1::<Vec<char>, _>(alpha_num().or(char('-'))).map(|s| {
+    many1::<Vec<char>, _>(letter().or(char('-'))).map(|s| {
         FromIterator::from_iter(s)
     }).skip(spaces()).parse_state(input)
 }
@@ -59,6 +67,12 @@ fn test_parse_token_right_brace() {
 }
 
 #[test]
+fn test_parse_token_bar() {
+    let result = parser(token_bar).parse("|");
+    assert_eq!(result, Result::Ok(((), "")));
+}
+
+#[test]
 fn test_parse_token_integer() {
     let result = parser(token_integer).parse("42");
     assert_eq!(result, Result::Ok((42, "")));
@@ -78,22 +92,45 @@ fn term_ref<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
 
 fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     between(
-        parser(token_left_paren),
-        parser(token_right_paren),
-        (parser(term), parser(term))
-    ).map(|(fun, arg)| Term::app(fun, arg)).parse_state(input)
+        parser(token_left_brace), parser(token_right_brace),
+        (
+            parser(term),
+            parser(term),
+            sep_by(
+                parser(term),
+                spaces()
+            )
+        )
+    ).map(|(fun, first_arg, many_args)| {
+        Term::app_many(fun, first_arg, many_args)
+    }).parse_state(input)
 }
 
 fn term_fun<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
-    between(
-        parser(token_left_brace),
-        parser(token_right_brace),
-        (parser(token_identifier), parser(term))
-    ).map(|(id, term)| Term::fun(id, term)).parse_state(input)
+    (
+        between(
+            parser(token_bar), parser(token_bar),
+            (
+                parser(token_identifier),
+                sep_by(
+                    parser(token_identifier),
+                    spaces()
+                )
+            )
+        ),
+        parser(term)
+    ).map(|((first_id, many_ids), term)| {
+        Term::fun_many(first_id, many_ids, term)
+    }).parse_state(input)
 }
 
 pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
-    parser(term_val).or(parser(term_ref)).or(parser(term_app)).or(parser(term_fun)).parse_state(input)
+    between(parser(token_left_paren), parser(token_right_paren), parser(term))
+    .or(parser(term_val))
+    .or(parser(term_ref))
+    .or(parser(term_app))
+    .or(parser(term_fun))
+    .parse_state(input)
 }
 
 #[test]
