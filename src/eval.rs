@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use super::term::Term;
 
+#[derive (Debug, PartialEq, Eq)]
+pub enum ReferenceError { NotFound }
+
 pub struct Context(HashMap<String, Term>);
 
 impl Context {
@@ -10,8 +13,8 @@ impl Context {
         Context(HashMap::new())
     }
 
-    pub fn lookup(&mut self, id: String) -> Option<Term> {
-        self.0.remove(&id)
+    pub fn lookup(&mut self, id: String) -> Result<Term, ReferenceError> {
+        self.0.remove(&id).ok_or(ReferenceError::NotFound)
     }
 
     pub fn bind(&mut self, id: String, term: Term) {
@@ -20,9 +23,6 @@ impl Context {
 
 }
 
-#[derive (Debug, PartialEq, Eq)]
-pub enum ReferenceError { NotFound }
-
 fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, ReferenceError> {
     if depth == 0 {
         return Result::Ok(term)
@@ -30,10 +30,7 @@ fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, Refer
     match term {
         Term::Val(val) => Result::Ok(Term::Val(val)),
         Term::Abs(id, term) => Result::Ok(Term::Abs(id, term)),
-        Term::Ref(id) => match ctx.lookup(id) {
-            Option::None => Result::Err(ReferenceError::NotFound),
-            Option::Some(val) => Result::Ok(val)
-        },
+        Term::Ref(id) => ctx.lookup(id),
         Term::App(fun, arg) => {
             match try!(eval_shallow(ctx, *fun, depth-1)) {
                 Term::Abs(id, term) => {
