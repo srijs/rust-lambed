@@ -1,10 +1,10 @@
-#[derive (Debug, PartialEq)]
+#[derive (Debug, PartialEq, Eq)]
 pub enum Primitive {
     Integer(i64),
     String(String)
 }
 
-#[derive (Debug, PartialEq)]
+#[derive (Debug, PartialEq, Eq)]
 pub enum Term {
     Val(Primitive),
     Ref(String),

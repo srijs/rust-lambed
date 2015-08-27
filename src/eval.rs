@@ -1,9 +1,18 @@
 use std::collections::HashMap;
 
-use super::term::Term;
+use super::term::{Primitive, Term};
 
 #[derive (Debug, PartialEq, Eq)]
-pub enum ReferenceError { NotFound }
+pub enum ReferenceError { NotFound(String) }
+
+#[derive (Debug, PartialEq, Eq)]
+pub enum TypeError { NotAFunction(Primitive) }
+
+#[derive (Debug, PartialEq, Eq)]
+pub enum EvalError {
+    ReferenceError(ReferenceError),
+    TypeError(TypeError)
+}
 
 pub struct Context(HashMap<String, Term>);
 
@@ -14,7 +23,7 @@ impl Context {
     }
 
     pub fn lookup(&mut self, id: String) -> Result<Term, ReferenceError> {
-        self.0.remove(&id).ok_or(ReferenceError::NotFound)
+        self.0.remove(&id).ok_or(ReferenceError::NotFound(id))
     }
 
     pub fn bind(&mut self, id: String, term: Term) {
@@ -23,20 +32,21 @@ impl Context {
 
 }
 
-fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, ReferenceError> {
+fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, EvalError> {
     if depth == 0 {
         return Result::Ok(term)
     }
     match term {
         Term::Val(val) => Result::Ok(Term::Val(val)),
         Term::Abs(id, term) => Result::Ok(Term::Abs(id, term)),
-        Term::Ref(id) => ctx.lookup(id),
+        Term::Ref(id) => ctx.lookup(id).map_err(|err| EvalError::ReferenceError(err)),
         Term::App(fun, arg) => {
             match try!(eval_shallow(ctx, *fun, depth-1)) {
                 Term::Abs(id, term) => {
                     ctx.bind(id, *arg);
                     Result::Ok(*term)
                 },
+                Term::Val(val) => Result::Err(EvalError::TypeError(TypeError::NotAFunction(val))),
                 fun_eval => {
                     Result::Ok(Term::App(Box::new(fun_eval), arg))
                 }
@@ -45,7 +55,7 @@ fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, Refer
     }
 }
 
-pub fn eval(ctx: &mut Context, term: Term) -> Result<Term, ReferenceError> {
+pub fn eval(ctx: &mut Context, term: Term) -> Result<Term, EvalError> {
     let mut current_term = term;
      // find the head normal form of the term,
      // which is equivalent to the fixpoint of

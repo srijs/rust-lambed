@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use super::term::{Primitive, Term};
 
-use combine::{Parser, ParserExt, State, ParseResult, between, spaces, char, digit, many1, alpha_num, parser};
+use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, spaces, char, digit, many1, alpha_num, parser};
 use combine::primitives::{Stream};
 
 fn token_left_paren<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
@@ -127,4 +127,8 @@ fn test_term_fun() {
         Term::id("b".to_string())
     );
     assert_eq!(result, Result::Ok((expr, "")));
+}
+
+pub fn parse_string(s: &String) -> Result<(Term, &str), ParseError<&str>> {
+    parser(term).parse(s)
 }
