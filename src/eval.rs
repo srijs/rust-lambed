@@ -39,18 +39,19 @@ fn eval_shallow(ctx: &mut Context, term: Term, depth: u32) -> Result<Term, EvalE
     }
     match term {
         Term::Val(val) => Result::Ok(Term::Val(val)),
-        Term::Abs(id, term) => Result::Ok(Term::Abs(id, term)),
-        Term::Ref(id) => ctx.lookup(id).map_err(|err| EvalError::ReferenceError(err)),
-        Term::App(fun, arg) => {
-            match try!(eval_shallow(ctx, *fun, depth-1)) {
-                Term::Abs(id, term) => {
-                    ctx.bind(id, *arg);
-                    Result::Ok(*term)
-                },
+        Term::Abs(id, term_box) => Result::Ok(Term::Abs(id, term_box)),
+        Term::Ref(id) => ctx.lookup(id).map_err(EvalError::ReferenceError),
+        Term::App(fun_box, arg_box) => {
+            let fun: Term = *fun_box;
+            match fun {
                 Term::Val(val) => Result::Err(EvalError::TypeError(TypeError::NotAFunction(val))),
-                fun_eval => {
-                    Result::Ok(Term::App(Box::new(fun_eval), arg))
-                }
+                Term::Abs(id, term_box) => {
+                    ctx.bind(id, *arg_box);
+                    Result::Ok(*term_box)
+                },
+                fun_term => eval_shallow(ctx, fun_term, depth-1).map(|new_term| {
+                    Term::App(Box::new(new_term), arg_box)
+                })
             }
         }
     }
