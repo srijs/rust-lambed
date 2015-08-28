@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use fixpoint::{Fix, fix_result};
+use fixpoint::Fix;
 
-use super::term::{Primitive, Term};
+use super::term::{Primitive, Term, Zoom, ZoomStack};
 
 #[derive (Debug, PartialEq, Eq)]
 pub enum ReferenceError { NotFound(String) }
@@ -35,34 +35,9 @@ impl Context {
 
 }
 
-struct ArgStack(Vec<Box<Term>>);
-
-impl ArgStack {
-
-    fn new() -> ArgStack {
-        ArgStack(Vec::new())
-    }
-
-    fn push(&mut self, arg_box: Box<Term>) {
-        self.0.push(arg_box)
-    }
-
-    fn pop(&mut self) -> Option<Box<Term>> {
-        self.0.pop()
-    }
-
-    fn unwind(&mut self, term: Term) -> Fix<Term> {
-        match self.pop() {
-            Option::None => Fix::Fix(term),
-            Option::Some(arg_box) => Fix::Pro(Term::App(Box::new(term), arg_box))
-        }
-    }
-
-}
-
 type EvalResult = Result<Fix<Term>, EvalError>;
 
-fn eval_shallow(ctx: &mut Context, args: &mut ArgStack, term: Term) -> EvalResult {
+fn eval_shallow(ctx: &mut Context, zooms: &mut ZoomStack, term: Term) -> EvalResult {
     match term {
         Term::Val(val) => Result::Ok(Fix::Fix(Term::Val(val))),
         Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
@@ -78,7 +53,7 @@ fn eval_shallow(ctx: &mut Context, args: &mut ArgStack, term: Term) -> EvalResul
                     Result::Ok(Fix::Pro(*term_box))
                 },
                 fun_term => {
-                    args.push(arg_box);
+                    zooms.push(Zoom::AppL(arg_box));
                     Result::Ok(Fix::Pro(fun_term))
                 }
             }
@@ -90,12 +65,8 @@ pub fn eval(ctx: &mut Context, term: Term) -> Result<Term, EvalError> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
-    let mut args = ArgStack::new();
-    fix_result(term, |term| {
-        eval_shallow(ctx, &mut args, term).map(|fix| match fix {
-            Fix::Pro(term) => Fix::Pro(term),
-            Fix::Fix(term) => args.unwind(term)
-        })
+    ZoomStack::new().fix_result(term, |zooms, term| {
+        eval_shallow(ctx, zooms, term)
     })
 }
 

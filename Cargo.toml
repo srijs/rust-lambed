@@ -13,3 +13,4 @@ optional = true
 
 [[bin]]
 name = "lambed"
+doc = false
