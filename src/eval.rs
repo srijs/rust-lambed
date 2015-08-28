@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use fixpoint::Fix;
 
-use super::term::{Primitive, Term, Zoom, ZoomStack};
+use super::term::{Primitive, Term};
+use super::zoom::{Zoom, ZoomStack};
 
 #[derive (Debug, PartialEq, Eq)]
 pub enum ReferenceError { NotFound(String) }
