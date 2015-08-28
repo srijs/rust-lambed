@@ -41,8 +41,8 @@ type EvalResult = Result<Fix<Term>, EvalError>;
 fn eval_shallow(ctx: &mut Context, zooms: &mut ZoomStack, term: Term) -> EvalResult {
     match term {
         Term::Val(val) => Result::Ok(Fix::Fix(Term::Val(val))),
-        Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
         Term::Var(id) => ctx.lookup(id).map(Fix::Pro).map_err(EvalError::ReferenceError),
+        Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
         Term::App(fun_box, arg_box) => {
             let fun: Term = *fun_box;
             match fun {

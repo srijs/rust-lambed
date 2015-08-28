@@ -33,13 +33,13 @@ impl Term {
     pub fn abs_many(first_id: String, many_ids: Vec<String>, term: Term) -> Term {
         let mut ids = many_ids;
         match ids.pop() {
-            Option::None => Term::Abs(first_id, Box::new(term)),
+            Option::None => Term::abs(first_id, term),
             Option::Some(last_id) => {
-                let mut lambda_term = Term::Abs(last_id, Box::new(term));
+                let mut lambda_term = Term::abs(last_id, term);
                 while let Some(id) = ids.pop() {
-                    lambda_term = Term::Abs(id, Box::new(lambda_term));
+                    lambda_term = Term::abs(id, lambda_term);
                 }
-                Term::Abs(first_id, Box::new(lambda_term))
+                Term::abs(first_id, lambda_term)
             }
         }
     }
@@ -51,9 +51,9 @@ impl Term {
     pub fn app_many(fun: Term, first_arg: Term, many_args: Vec<Term>) -> Term {
         let mut args = many_args;
         args.reverse();
-        let mut app_term = Term::App(Box::new(fun), Box::new(first_arg));
+        let mut app_term = Term::app(fun, first_arg);
         while let Some(arg) = args.pop() {
-            app_term = Term::App(Box::new(app_term), Box::new(arg));
+            app_term = Term::app(app_term, arg);
         }
         app_term
     }
