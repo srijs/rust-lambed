@@ -42,7 +42,7 @@ fn eval_shallow(ctx: &mut Context, zooms: &mut ZoomStack, term: Term) -> EvalRes
     match term {
         Term::Val(val) => Result::Ok(Fix::Fix(Term::Val(val))),
         Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
-        Term::Ref(id) => ctx.lookup(id).map(Fix::Pro).map_err(EvalError::ReferenceError),
+        Term::Var(id) => ctx.lookup(id).map(Fix::Pro).map_err(EvalError::ReferenceError),
         Term::App(fun_box, arg_box) => {
             let fun: Term = *fun_box;
             match fun {
@@ -83,9 +83,9 @@ fn eval_id() {
     let mut c = Context::new();
     let x = eval(&mut c,
         Term::app(
-            Term::fun(
+            Term::abs(
                 "x".to_string(),
-                Term::id("x".to_string())
+                Term::var("x".to_string())
             ),
             Term::val_int(42)
         )

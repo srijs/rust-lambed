@@ -82,8 +82,8 @@ fn term_val<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     parser(primitive).map(|val| Term::Val(val)).parse_state(input)
 }
 
-fn term_ref<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
-    parser(token_identifier).map(|id| Term::Ref(id)).parse_state(input)
+fn term_var<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
+    parser(token_identifier).map(|id| Term::Var(id)).parse_state(input)
 }
 
 fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
@@ -102,7 +102,7 @@ fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     }).parse_state(input)
 }
 
-fn term_fun<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
+fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     (
         between(
             parser(token_bar), parser(token_bar),
@@ -116,7 +116,7 @@ fn term_fun<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
         ),
         parser(term)
     ).map(|((first_id, many_ids), term)| {
-        Term::fun_many(first_id, many_ids, term)
+        Term::abs_many(first_id, many_ids, term)
     }).parse_state(input)
 }
 
@@ -124,9 +124,9 @@ fn term_fun<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
 pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     between(parser(token_left_paren), parser(token_right_paren), parser(term))
     .or(parser(term_val))
-    .or(parser(term_ref))
+    .or(parser(term_var))
     .or(parser(term_app))
-    .or(parser(term_fun))
+    .or(parser(term_abs))
     .parse_state(input)
 }
 
@@ -137,9 +137,9 @@ fn test_term_val_int() {
 }
 
 #[test]
-fn test_term_ref() {
+fn test_term_var() {
     let result = parser(term).parse("x");
-    let expr = Term::id("x".to_string());
+    let expr = Term::var("x".to_string());
     assert_eq!(result, Result::Ok((expr, "")));
 }
 
@@ -147,18 +147,18 @@ fn test_term_ref() {
 fn test_term_app() {
     let result = parser(term).parse("{a b}");
     let expr = Term::app(
-        Term::id("a".to_string()),
-        Term::id("b".to_string())
+        Term::var("a".to_string()),
+        Term::var("b".to_string())
     );
     assert_eq!(result, Result::Ok((expr, "")));
 }
 
 #[test]
-fn test_term_fun() {
+fn test_term_abs() {
     let result = parser(term).parse("|a| b");
     let expr = Term::fun(
         "a".to_string(),
-        Term::id("b".to_string())
+        Term::var("b".to_string())
     );
     assert_eq!(result, Result::Ok((expr, "")));
 }

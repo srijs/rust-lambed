@@ -7,7 +7,7 @@ pub enum Primitive {
 #[derive (Debug, PartialEq, Eq)]
 pub enum Term {
     Val(Primitive),
-    Ref(String),
+    Var(String),
     Abs(String, Box<Term>),
     App(Box<Term>, Box<Term>)
 }
@@ -22,15 +22,15 @@ impl Term {
         Term::Val(Primitive::String(x))
     }
 
-    pub fn id(id: String) -> Term {
-        Term::Ref(id)
+    pub fn var(id: String) -> Term {
+        Term::Var(id)
     }
 
-    pub fn fun(id: String, term: Term) -> Term {
+    pub fn abs(id: String, term: Term) -> Term {
         Term::Abs(id, Box::new(term))
     }
 
-    pub fn fun_many(first_id: String, many_ids: Vec<String>, term: Term) -> Term {
+    pub fn abs_many(first_id: String, many_ids: Vec<String>, term: Term) -> Term {
         let mut ids = many_ids;
         match ids.pop() {
             Option::None => Term::Abs(first_id, Box::new(term)),
