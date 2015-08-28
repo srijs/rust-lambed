@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use super::term::{Primitive, Term};
 
-use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, sep_by, letter, spaces, char, digit, many, many1, alpha_num, parser};
+use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, sep_by, letter, spaces, char, digit, many1, parser};
 use combine::primitives::{Stream};
 
 fn token_left_paren<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
@@ -23,10 +23,6 @@ fn token_right_brace<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I
 
 fn token_bar<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
     char('|').map(|_| ()).skip(spaces()).parse_state(input)
-}
-
-fn token_comma<I: Stream<Item=char>>(input: State<I>) -> ParseResult<(), I> {
-    char(',').map(|_| ()).skip(spaces()).parse_state(input)
 }
 
 fn token_integer<I: Stream<Item=char>>(input: State<I>) -> ParseResult<i64, I> {
@@ -124,6 +120,7 @@ fn term_fun<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     }).parse_state(input)
 }
 
+#[allow(unconditional_recursion)]
 pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Term, I> {
     between(parser(token_left_paren), parser(token_right_paren), parser(term))
     .or(parser(term_val))
