@@ -148,7 +148,7 @@ fn test_term_ref() {
 
 #[test]
 fn test_term_app() {
-    let result = parser(term).parse("(a b)");
+    let result = parser(term).parse("{a b}");
     let expr = Term::app(
         Term::id("a".to_string()),
         Term::id("b".to_string())
@@ -158,7 +158,7 @@ fn test_term_app() {
 
 #[test]
 fn test_term_fun() {
-    let result = parser(term).parse("{a b}");
+    let result = parser(term).parse("|a| b");
     let expr = Term::fun(
         "a".to_string(),
         Term::id("b".to_string())
