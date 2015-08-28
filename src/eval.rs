@@ -69,10 +69,7 @@ pub fn eval(scope: &mut Scope, term: Term) -> Result<Term, EvalError> {
     // which is equivalent to the fixpoint of
     // the eval_shallow function
     Loc::top(term).fix_result(|loc| {
-        eval_shallow(scope, loc).map(|fix| match fix {
-            Fix::Pro(loc) => Fix::Pro(loc),
-            Fix::Fix(loc) => Loc::up(loc)
-        })
+        eval_shallow(scope, loc)
     }).map(Loc::get)
 }
 
