@@ -15,8 +15,8 @@ fn main() {
             Err(err) => println!("{:?}", err),
             Ok((term, _)) => {
                 println!("{:?}", term);
-                let mut context = lambed::eval::Context::new();
-                let result = lambed::eval::eval(&mut context, term);
+                let mut scope = lambed::eval::Scope::new();
+                let result = lambed::eval::eval(&mut scope, term);
                 match result {
                     Ok(term) => println!("{:?}", term),
                     Err(err) => println!("{:?}", err)

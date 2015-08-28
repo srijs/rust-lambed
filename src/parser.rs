@@ -156,7 +156,7 @@ fn test_term_app() {
 #[test]
 fn test_term_abs() {
     let result = parser(term).parse("|a| b");
-    let expr = Term::fun(
+    let expr = Term::abs(
         "a".to_string(),
         Term::var("b".to_string())
     );

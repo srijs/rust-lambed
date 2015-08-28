@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use fixpoint::Fix;
 
 use super::term::{Primitive, Term};
-use super::zoom::{Zoom, ZoomStack};
+use super::zipper::{Loc, Ctx};
 
 #[derive (Debug, PartialEq, Eq)]
 pub enum ReferenceError { NotFound(String) }
@@ -18,12 +18,12 @@ pub enum EvalError {
     StackOverflow
 }
 
-pub struct Context(HashMap<String, Term>);
+pub struct Scope(HashMap<String, Term>);
 
-impl Context {
+impl Scope {
 
-    pub fn new() -> Context {
-        Context(HashMap::new())
+    pub fn new() -> Scope {
+        Scope(HashMap::new())
     }
 
     pub fn lookup(&mut self, id: String) -> Result<Term, ReferenceError> {
@@ -36,52 +36,57 @@ impl Context {
 
 }
 
-type EvalResult = Result<Fix<Term>, EvalError>;
+type EvalResult = Result<Fix<Loc>, EvalError>;
 
-fn eval_shallow(ctx: &mut Context, zooms: &mut ZoomStack, term: Term) -> EvalResult {
-    match term {
-        Term::Val(val) => Result::Ok(Fix::Fix(Term::Val(val))),
-        Term::Var(id) => ctx.lookup(id).map(Fix::Pro).map_err(EvalError::ReferenceError),
-        Term::Abs(id, term_box) => Result::Ok(Fix::Fix(Term::Abs(id, term_box))),
-        Term::App(fun_box, arg_box) => {
+fn eval_shallow(scope: &mut Scope, loc: Loc) -> EvalResult {
+    match loc {
+        Loc(Term::Val(val), c) => Result::Ok(Fix::Fix(Loc(Term::Val(val), c))),
+        Loc(Term::Var(id), c) => match scope.lookup(id) {
+            Result::Ok(term) => Result::Ok(Fix::Pro(Loc(term, c))),
+            Result::Err(err) => Result::Err(EvalError::ReferenceError(err))
+        },
+        Loc(Term::Abs(id, term_box), c) => Result::Ok(Fix::Fix(Loc(Term::Abs(id, term_box), c))),
+        Loc(Term::App(fun_box, arg_box), c) => {
             let fun: Term = *fun_box;
             match fun {
                 Term::Val(val) => {
                     Result::Err(EvalError::TypeError(TypeError::NotAFunction(val)))
                 },
                 Term::Abs(id, term_box) => {
-                    ctx.bind(id, *arg_box);
-                    Result::Ok(Fix::Pro(*term_box))
+                    scope.bind(id, *arg_box);
+                    Result::Ok(Fix::Pro(Loc(*term_box, c)))
                 },
                 fun_term => {
-                    zooms.push(Zoom::AppL(arg_box));
-                    Result::Ok(Fix::Pro(fun_term))
+                    Result::Ok(Fix::Pro(Loc(fun_term, Ctx::AppL(Box::new(c), *arg_box))))
                 }
             }
         }
     }
 }
 
-pub fn eval(ctx: &mut Context, term: Term) -> Result<Term, EvalError> {
+pub fn eval(scope: &mut Scope, term: Term) -> Result<Term, EvalError> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
-    ZoomStack::new().fix_result(term, |zooms, term| {
-        eval_shallow(ctx, zooms, term)
-    })
+    Loc::top(term).fix_result(|loc| {
+        eval_shallow(scope, loc).map(|fix| match fix {
+            Fix::Pro(loc) => Fix::Pro(loc),
+            Fix::Fix(loc) => Loc::up(loc)
+        })
+    }).map(Loc::get)
 }
 
 #[test]
 fn eval_val() {
-    let mut c = Context::new();
-    let x = eval(&mut c, Term::val_int(42));
+    let mut scope = Scope::new();
+    let x = eval(&mut scope, Term::val_int(42));
     assert_eq!(x, Result::Ok(Term::val_int(42)));
 }
 
 #[test]
 fn eval_id() {
-    let mut c = Context::new();
-    let x = eval(&mut c,
+    let mut scope = Scope::new();
+    let x = eval(&mut scope,
         Term::app(
             Term::abs(
                 "x".to_string(),
