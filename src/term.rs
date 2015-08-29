@@ -44,8 +44,7 @@ impl<T> Term<T> {
         Term::Abs(id, y, Box::new(term))
     }
 
-    pub fn abs_many(first_arg: (String, T), many_args: Vec<(String, T)>, term: Term<T>) -> Term<T> {
-        let mut args = many_args;
+    pub fn abs_many(first_arg: (String, T), mut args: Vec<(String, T)>, term: Term<T>) -> Term<T> {
         match args.pop() {
             Option::None => Term::abs(first_arg.0, first_arg.1, term),
             Option::Some((last_id, last_y)) => {
@@ -62,8 +61,7 @@ impl<T> Term<T> {
         Term::App(Box::new(fun), Box::new(arg))
     }
 
-    pub fn app_many(fun: Term<T>, first_arg: Term<T>, many_args: Vec<Term<T>>) -> Term<T> {
-        let mut args = many_args;
+    pub fn app_many(fun: Term<T>, first_arg: Term<T>, mut args: Vec<Term<T>>) -> Term<T> {
         args.reverse();
         let mut app_term = Term::app(fun, first_arg);
         while let Some(arg) = args.pop() {
