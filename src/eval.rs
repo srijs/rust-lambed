@@ -18,39 +18,39 @@ pub enum EvalError {
     StackOverflow
 }
 
-pub struct Scope(HashMap<String, Term>);
+pub struct Scope<T>(HashMap<String, Term<T>>);
 
-impl Scope {
+impl<T> Scope<T> {
 
-    pub fn new() -> Scope {
+    pub fn new() -> Scope<T> {
         Scope(HashMap::new())
     }
 
-    pub fn lookup(&mut self, id: String) -> Result<Term, ReferenceError> {
+    pub fn lookup(&mut self, id: String) -> Result<Term<T>, ReferenceError> {
         self.0.remove(&id).ok_or(ReferenceError::NotFound(id))
     }
 
-    pub fn bind(&mut self, id: String, term: Term) {
+    pub fn bind(&mut self, id: String, term: Term<T>) {
         self.0.insert(id, term);
     }
 
 }
 
-type EvalResult = Result<Fix<Loc>, EvalError>;
+type EvalResult<T> = Result<Fix<Loc<T>>, EvalError>;
 
-fn eval_shallow(scope: &mut Scope, loc: Loc) -> EvalResult {
+fn eval_shallow<T>(scope: &mut Scope<T>, loc: Loc<T>) -> EvalResult<T> {
     match loc {
         Loc(Term::Var(id), c) => match scope.lookup(id) {
             Result::Ok(term) => Result::Ok(Fix::Pro(Loc(term, c))),
             Result::Err(err) => Result::Err(EvalError::ReferenceError(err))
         },
         Loc(Term::App(fun_box, arg_box), c) => {
-            let fun: Term = *fun_box;
+            let fun: Term<T> = *fun_box;
             match fun {
                 Term::Val(val) => {
                     Result::Err(EvalError::TypeError(TypeError::NotAFunction(val)))
                 },
-                Term::Abs(id, term_box) => {
+                Term::Abs(id, _, term_box) => {
                     scope.bind(id, *arg_box);
                     Result::Ok(Fix::Pro(Loc(*term_box, c)))
                 },
@@ -63,7 +63,7 @@ fn eval_shallow(scope: &mut Scope, loc: Loc) -> EvalResult {
     }
 }
 
-pub fn eval(scope: &mut Scope, term: Term) -> Result<Term, EvalError> {
+pub fn eval<T>(scope: &mut Scope<T>, term: Term<T>) -> Result<Term<T>, EvalError> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
