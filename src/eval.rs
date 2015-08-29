@@ -69,7 +69,7 @@ pub fn eval(scope: &mut Scope, term: Term) -> Result<Term, EvalError> {
     // the eval_shallow function
     Loc::top(term).fix_result(|loc| {
         eval_shallow(scope, loc)
-    }).map(Loc::get)
+    })
 }
 
 #[test]

@@ -56,24 +56,24 @@ impl Loc {
         Loc(term, Ctx::Top)
     }
 
-    pub fn fix<F: FnMut(Loc) -> Fix<Loc>>(self, f: F) -> Loc {
+    pub fn fix<F: FnMut(Loc) -> Fix<Loc>>(self, f: F) -> Term {
         let mut g = f;
         fix(self, |loc| {
             match g(loc) {
                 Fix::Fix(loc) => loc.up(),
                 fix => fix
             }
-        })
+        }).get()
     }
 
-    pub fn fix_result<E, F: FnMut(Loc) -> Result<Fix<Loc>, E>>(self, f: F) -> Result<Loc, E> {
+    pub fn fix_result<E, F: FnMut(Loc) -> Result<Fix<Loc>, E>>(self, f: F) -> Result<Term, E> {
         let mut g = f;
         fix_result(self, |loc| {
             g(loc).map(|fix| match fix {
                 Fix::Fix(loc) => loc.up(),
                 _ => fix
             })
-        })
+        }).map(Loc::get)
     }
 
 }
