@@ -40,12 +40,10 @@ type EvalResult = Result<Fix<Loc>, EvalError>;
 
 fn eval_shallow(scope: &mut Scope, loc: Loc) -> EvalResult {
     match loc {
-        Loc(Term::Val(val), c) => Result::Ok(Fix::Fix(Loc(Term::Val(val), c))),
         Loc(Term::Var(id), c) => match scope.lookup(id) {
             Result::Ok(term) => Result::Ok(Fix::Pro(Loc(term, c))),
             Result::Err(err) => Result::Err(EvalError::ReferenceError(err))
         },
-        Loc(Term::Abs(id, term_box), c) => Result::Ok(Fix::Fix(Loc(Term::Abs(id, term_box), c))),
         Loc(Term::App(fun_box, arg_box), c) => {
             let fun: Term = *fun_box;
             match fun {
@@ -56,11 +54,12 @@ fn eval_shallow(scope: &mut Scope, loc: Loc) -> EvalResult {
                     scope.bind(id, *arg_box);
                     Result::Ok(Fix::Pro(Loc(*term_box, c)))
                 },
-                fun_term => {
-                    Result::Ok(Fix::Pro(Loc(fun_term, Ctx::AppL(Box::new(c), *arg_box))))
+                _ => {
+                    Result::Ok(Fix::Pro(Loc(fun, Ctx::AppL(Box::new(c), *arg_box))))
                 }
             }
-        }
+        },
+        _ => Result::Ok(Fix::Fix(loc))
     }
 }
 

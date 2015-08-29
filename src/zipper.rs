@@ -23,37 +23,32 @@ impl Loc {
 
     pub fn down(self) -> Fix<Loc> {
         match self {
-            Loc(Term::Val(s), c) => Fix::Fix(Loc(Term::Val(s), c)),
-            Loc(Term::Var(s), c) => Fix::Fix(Loc(Term::Var(s), c)),
             Loc(Term::Abs(s, t1), c) => Fix::Pro(Loc(*t1, Ctx::Abs(s, Box::new(c)))),
-            Loc(Term::App(t1, t2), c) => Fix::Pro(Loc(*t1, Ctx::AppL(Box::new(c), *t2)))
+            Loc(Term::App(t1, t2), c) => Fix::Pro(Loc(*t1, Ctx::AppL(Box::new(c), *t2))),
+            _ => Fix::Fix(self)
         }
     }
 
     pub fn up(self) -> Fix<Loc> {
         match self {
-            Loc(t, Ctx::Top) => Fix::Fix(Loc(t, Ctx::Top)),
             Loc(t1, Ctx::Abs(s, c)) => Fix::Pro(Loc(Term::Abs(s, Box::new(t1)), *c)),
             Loc(t1, Ctx::AppL(c, t2)) => Fix::Pro(Loc(Term::App(Box::new(t1), Box::new(t2)), *c)),
-            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(Term::App(Box::new(t1), Box::new(t2)), *c))
+            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(Term::App(Box::new(t1), Box::new(t2)), *c)),
+            _ => Fix::Fix(self)
         }
     }
 
     pub fn left(self) -> Fix<Loc> {
         match self {
-            Loc(t, Ctx::Top) => Fix::Fix(Loc(t, Ctx::Top)),
-            Loc(t1, Ctx::Abs(s, c)) => Fix::Fix(Loc(t1, Ctx::Abs(s, c))),
-            Loc(t1, Ctx::AppL(c, t2)) => Fix::Fix(Loc(t1, Ctx::AppL(c, t2))),
-            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(t1, Ctx::AppL(c, t2)))
+            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(t1, Ctx::AppL(c, t2))),
+            _ => Fix::Fix(self)
         }
     }
 
     pub fn right(self) -> Fix<Loc> {
         match self {
-            Loc(t, Ctx::Top) => Fix::Fix(Loc(t, Ctx::Top)),
-            Loc(t1, Ctx::Abs(s, c)) => Fix::Fix(Loc(t1, Ctx::Abs(s, c))),
             Loc(t1, Ctx::AppL(c, t2)) => Fix::Pro(Loc(t2, Ctx::AppR(t1, c))),
-            Loc(t2, Ctx::AppR(t1, c)) => Fix::Fix(Loc(t2, Ctx::AppR(t1, c)))
+            _ => Fix::Fix(self)
         }
     }
 
@@ -65,8 +60,8 @@ impl Loc {
         let mut g = f;
         fix(self, |loc| {
             match g(loc) {
-                Fix::Pro(loc) => Fix::Pro(loc),
-                Fix::Fix(loc) => Loc::up(loc)
+                Fix::Fix(loc) => Loc::up(loc),
+                fix => fix
             }
         })
     }
@@ -75,8 +70,8 @@ impl Loc {
         let mut g = f;
         fix_result(self, |loc| {
             g(loc).map(|fix| match fix {
-                Fix::Pro(loc) => Fix::Pro(loc),
-                Fix::Fix(loc) => Loc::up(loc)
+                Fix::Fix(loc) => Loc::up(loc),
+                _ => fix
             })
         })
     }
