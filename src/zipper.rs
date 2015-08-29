@@ -31,9 +31,9 @@ impl Loc {
 
     pub fn up(self) -> Fix<Loc> {
         match self {
-            Loc(t1, Ctx::Abs(s, c)) => Fix::Pro(Loc(Term::Abs(s, Box::new(t1)), *c)),
-            Loc(t1, Ctx::AppL(c, t2)) => Fix::Pro(Loc(Term::App(Box::new(t1), Box::new(t2)), *c)),
-            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(Term::App(Box::new(t1), Box::new(t2)), *c)),
+            Loc(t1, Ctx::Abs(s, c)) => Fix::Pro(Loc(Term::abs(s, t1), *c)),
+            Loc(t1, Ctx::AppL(c, t2)) => Fix::Pro(Loc(Term::app(t1, t2), *c)),
+            Loc(t2, Ctx::AppR(t1, c)) => Fix::Pro(Loc(Term::app(t1, t2), *c)),
             _ => Fix::Fix(self)
         }
     }
@@ -60,7 +60,7 @@ impl Loc {
         let mut g = f;
         fix(self, |loc| {
             match g(loc) {
-                Fix::Fix(loc) => Loc::up(loc),
+                Fix::Fix(loc) => loc.up(),
                 fix => fix
             }
         })
@@ -70,7 +70,7 @@ impl Loc {
         let mut g = f;
         fix_result(self, |loc| {
             g(loc).map(|fix| match fix {
-                Fix::Fix(loc) => Loc::up(loc),
+                Fix::Fix(loc) => loc.up(),
                 _ => fix
             })
         })
