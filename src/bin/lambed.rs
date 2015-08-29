@@ -15,12 +15,8 @@ fn main() {
             Err(err) => println!("{:?}", err),
             Ok((term, _)) => {
                 println!("{:?}", term);
-                let mut scope = lambed::eval::Scope::new();
-                let result = lambed::eval::eval(&mut scope, term);
-                match result {
-                    Ok(term) => println!("{:?}", term),
-                    Err(err) => println!("{:?}", err)
-                }
+                let result = lambed::eval::eval(term);
+                println!("{:?}", result)
             }
         }
     }

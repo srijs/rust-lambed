@@ -5,11 +5,23 @@ pub enum Primitive {
 }
 
 #[derive (Debug, PartialEq, Eq)]
+pub enum PrimitiveType {
+    Integer, String
+}
+
+#[derive (Debug, PartialEq, Eq)]
+pub enum Type {
+    Val(PrimitiveType),
+    Abs(Box<Type>, Box<Type>)
+}
+
+#[derive (Debug, PartialEq, Eq)]
 pub enum Term<T> {
     Val(Primitive),
     Var(String),
     Abs(String, T, Box<Term<T>>),
-    App(Box<Term<T>>, Box<Term<T>>)
+    App(Box<Term<T>>, Box<Term<T>>),
+    Let(String, Option<(T, Box<Term<T>>)>, Box<Term<T>>)
 }
 
 pub type Untyped = Term<()>;

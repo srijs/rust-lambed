@@ -157,7 +157,7 @@ fn test_term_app() {
 fn test_term_abs() {
     let result = parser(term).parse("|a| b");
     let expr = Term::abs(
-        "a".to_string(),
+        "a".to_string(), (),
         Term::var("b".to_string())
     );
     assert_eq!(result, Result::Ok((expr, "")));
