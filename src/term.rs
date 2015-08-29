@@ -5,15 +5,14 @@ pub enum Primitive {
 }
 
 #[derive (Debug, PartialEq, Eq)]
-pub struct Untyped;
-
-#[derive (Debug, PartialEq, Eq)]
 pub enum Term<T> {
     Val(Primitive),
     Var(String),
     Abs(String, T, Box<Term<T>>),
     App(Box<Term<T>>, Box<Term<T>>)
 }
+
+pub type Untyped = Term<()>;
 
 impl<T> Term<T> {
 
@@ -63,18 +62,18 @@ impl<T> Term<T> {
 
 }
 
-impl Term<Untyped> {
+impl Untyped {
 
-    pub fn abs_many_untyped(first_id: String, many_ids: Vec<String>, term: Term<Untyped>) -> Term<Untyped> {
+    pub fn abs_many_untyped(first_id: String, many_ids: Vec<String>, term: Untyped) -> Untyped {
         let mut ids = many_ids;
         match ids.pop() {
-            Option::None => Term::abs(first_id, Untyped, term),
+            Option::None => Term::abs(first_id, (), term),
             Option::Some(last_id) => {
-                let mut lambda_term = Term::abs(last_id, Untyped, term);
+                let mut lambda_term = Term::abs(last_id, (), term);
                 while let Some(id) = ids.pop() {
-                    lambda_term = Term::abs(id, Untyped, lambda_term);
+                    lambda_term = Term::abs(id, (), lambda_term);
                 }
-                Term::abs(first_id, Untyped, lambda_term)
+                Term::abs(first_id, (), lambda_term)
             }
         }
     }
