@@ -24,8 +24,8 @@ impl<T> Env<T> {
         self.0.push((s, o))
     }
 
-    pub fn pop(&mut self) -> (String, Option<(T, Box<Term<T>>)>) {
-        self.0.pop().unwrap()
+    pub fn pop(&mut self) -> Option<(String, Option<(T, Box<Term<T>>)>)> {
+        self.0.pop()
     }
 
     pub fn take(&mut self, s: &String) -> Option<(T, Box<Term<T>>)> {
@@ -65,7 +65,7 @@ impl<T> Loc<T> {
             Loc(t1, Ctx::AppL(c, t2), e) => Fix::Pro(Loc(Term::app(t1, t2), *c, e)),
             Loc(t2, Ctx::AppR(t1, c), e) => Fix::Pro(Loc(Term::app(t1, t2), *c, e)),
             Loc(t1, Ctx::Let(c), mut e) => {
-                let (s, o) = e.pop();
+                let (s, o) = e.pop().unwrap();
                 Fix::Pro(Loc(Term::Let(s, o, Box::new(t1)), *c, e))
             },
             _ => Fix::Fix(self)
