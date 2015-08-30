@@ -1,15 +1,14 @@
 #[cfg(feature = "readline")]
-extern crate readline;
+extern crate linenoise;
 extern crate lambed;
 
 #[cfg(feature = "readline")]
 fn interact<F: Fn(&String)>(f: F) {
-    use std::ffi::CString;
-    let prompt = CString::new("> ").unwrap();
-    while let Ok(s) = readline::readline(&prompt) {
-        let bytes = s.to_bytes();
-        let string = String::from_utf8_lossy(bytes).into_owned().to_string();
-        f(&string)
+    let _ = linenoise::history_load(".lambed_history");
+    while let Some(line) = linenoise::input("> ") {
+        let _ = linenoise::history_add(&line);
+        let _ = linenoise::history_save(".lambed_history");
+        f(&line)
     }
 }
 

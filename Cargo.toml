@@ -3,12 +3,16 @@ name = "lambed"
 version = "0.1.0"
 authors = ["Sam Rijs <srijs@airpost.net>"]
 
+[features]
+default = []
+readline = ["linenoise-rust"]
+
 [dependencies]
 combine = "1.0.0"
 fixpoint = "0.1.0"
 
-[dependencies.readline]
-version = "0.0.11"
+[dependencies.linenoise-rust]
+version = "0.1.11"
 optional = true
 
 [[bin]]
