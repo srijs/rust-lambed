@@ -6,7 +6,7 @@ authors = ["Sam Rijs <srijs@airpost.net>"]
 [dependencies]
 combine = "1.0.0"
 fixpoint = "0.2.0"
-copperline = "0.0.3"
+copperline = "0.1.2"
 
 [[bin]]
 name = "lambed"

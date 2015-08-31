@@ -3,8 +3,9 @@ extern crate lambed;
 
 fn interact<F: Fn(&String)>(f: F) {
     let mut c = copperline::Copperline::new();
-    while let Ok(line) = c.readline("> ") {
-        f(&line)
+    while let Ok(line) = c.read_line("> ") {
+        f(&line);
+        c.add_history(line);
     }
 }
 
