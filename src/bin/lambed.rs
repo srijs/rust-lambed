@@ -1,25 +1,10 @@
-#[cfg(feature = "readline")]
-extern crate linenoise;
+extern crate copperline;
 extern crate lambed;
 
-#[cfg(feature = "readline")]
 fn interact<F: Fn(&String)>(f: F) {
-    let _ = linenoise::history_load(".lambed_history");
-    while let Some(line) = linenoise::input("> ") {
-        let _ = linenoise::history_add(&line);
-        let _ = linenoise::history_save(".lambed_history");
+    let mut c = copperline::Copperline::new();
+    while let Ok(line) = c.readline("> ") {
         f(&line)
-    }
-}
-
-#[cfg(not(feature = "readline"))]
-fn interact<F: Fn(&String)>(f: F) {
-    use std::io;
-    let mut stdin = io::stdin();
-    let mut string = String::new();
-    while let Ok(_) = stdin.read_line(&mut string) {
-        f(&string);
-        string.clear()
     }
 }
 
