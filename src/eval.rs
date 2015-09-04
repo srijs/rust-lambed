@@ -19,7 +19,7 @@ pub enum EvalError {
 
 type EvalResult<T> = Result<Fix<Loc<T>>, EvalError>;
 
-fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
+fn eval_shallow<T: Clone>(loc: Loc<T>) -> EvalResult<T> {
     match loc {
         Loc(Term::Var(s), c, mut e) => match e.take(&s) {
             Option::None => Result::Err(EvalError::ReferenceError(ReferenceError::NotFound(s))),
@@ -63,14 +63,14 @@ fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
     }
 }
 
-pub fn eval<T>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval<T: Clone>(term: Term<T>) -> Result<Term<T>, EvalError> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
     Loc::top(term).fix_result(eval_shallow)
 }
 
-pub fn eval_debug<T: Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval_debug<T: Clone + Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
     Loc::top(term).fix_result(|loc| {
         println!("{:?}", loc);
         eval_shallow(loc)
