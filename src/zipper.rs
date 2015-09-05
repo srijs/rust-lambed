@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use fixpoint::{Fix, fix, fix_result};
 
 use super::term::Term;
@@ -23,13 +24,6 @@ impl<T> Bind<T> {
         match self {
             &Bind::Var(ref s, _) => id == s,
             &Bind::Let(ref s, _) => id == s
-        }
-    }
-
-    fn take(&mut self) -> Option<(T, Box<Term<T>>)> where T: Clone {
-        match self {
-            &mut Bind::Var(ref s, ref y) => Some((y.clone(), Box::new(Term::Var(s.clone())))),
-            &mut Bind::Let(_, ref mut o) => o.take()
         }
     }
 
@@ -70,10 +64,28 @@ impl<T> Env<T> {
         }).unwrap()
     }
 
-    pub fn take(&mut self, s: &str) -> Option<(T, Box<Term<T>>)> where T: Clone {
+    fn lookup<'a>(&'a mut self, s: &str) -> Option<&'a mut Bind<T>> {
         self.0.iter_mut().rev().find(|&&mut ref bind| {
             bind.is_identified_by(s)
-        }).and_then(|&mut ref mut bind| bind.take())
+        })
+    }
+
+    pub fn take<'a>(&'a mut self, id: &str) -> Option<Fix<(Cow<'a, T>, Box<Term<T>>)>> where T: Clone {
+        self.lookup(id).and_then(|bind| {
+            match bind {
+                &mut Bind::Var(ref s, ref y) => Some(Fix::Fix((Cow::Borrowed(y), Box::new(Term::Var(s.clone()))))),
+                &mut Bind::Let(_, ref mut o) => o.take().map(|(y, t_box)| Fix::Pro((Cow::Owned(y), t_box)))
+            }
+        })
+    }
+
+    pub fn take_term(&mut self, id: &str) -> Option<Fix<Box<Term<T>>>> {
+        self.lookup(id).and_then(|bind| {
+            match bind {
+                &mut Bind::Var(ref s, _) => Some(Fix::Fix(Box::new(Term::Var(s.clone())))),
+                &mut Bind::Let(_, ref mut o) => o.take().map(|(_, t_box)| Fix::Pro(t_box))
+            }
+        })
     }
 
 }

@@ -3,10 +3,12 @@ use std::fmt::Debug;
 use fixpoint::Fix;
 
 use super::term::{Primitive, Term};
-use super::zipper::{Loc};
+use super::zipper::Loc;
 
 #[derive (Debug, PartialEq, Eq)]
-pub enum ReferenceError { NotFound(String) }
+pub enum ReferenceError {
+    NotFound(String)
+}
 
 #[derive (Debug, PartialEq, Eq)]
 pub enum TypeError { NotAFunction(Primitive) }
@@ -19,11 +21,15 @@ pub enum EvalError {
 
 type EvalResult<T> = Result<Fix<Loc<T>>, EvalError>;
 
-fn eval_shallow<T: Clone>(loc: Loc<T>) -> EvalResult<T> {
+fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
     match loc {
-        Loc(Term::Var(s), c, mut e) => match e.take(&s) {
-            Option::None => Result::Err(EvalError::ReferenceError(ReferenceError::NotFound(s))),
-            Option::Some((_, t_box)) => Result::Ok(Fix::Pro(Loc(*t_box, c, e)))
+        Loc(Term::Var(s), c, mut e) => {
+            match e.take_term(&s) {
+                None => Result::Err(EvalError::ReferenceError(ReferenceError::NotFound(s))),
+                Some(result) => Result::Ok(result.map(|t_box| {
+                    Loc(*t_box, c, e)
+                }))
+            }
         },
         Loc(Term::App(fun_box, arg_box), c, e) => {
             let fun: Term<T> = *fun_box;
@@ -63,14 +69,14 @@ fn eval_shallow<T: Clone>(loc: Loc<T>) -> EvalResult<T> {
     }
 }
 
-pub fn eval<T: Clone>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval<T>(term: Term<T>) -> Result<Term<T>, EvalError> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
     Loc::top(term).fix_result(eval_shallow)
 }
 
-pub fn eval_debug<T: Clone + Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval_debug<T: Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
     Loc::top(term).fix_result(|loc| {
         println!("{:?}", loc);
         eval_shallow(loc)
