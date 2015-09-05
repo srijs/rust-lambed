@@ -40,19 +40,19 @@ pub struct Env<T>(Vec<Bind<T>>);
 
 impl<T> Env<T> {
 
-    pub fn new() -> Env<T> {
+    fn new() -> Env<T> {
         Env(Vec::new())
     }
 
-    pub fn push_var(&mut self, s: String, y: T) {
+    fn push_var(&mut self, s: String, y: T) {
         self.0.push(Bind::Var(s, y))
     }
 
-    pub fn push_let(&mut self, s: String, o: Option<(T, Box<Term<T>>)>) {
+    fn push_let(&mut self, s: String, o: Option<(T, Box<Term<T>>)>) {
         self.0.push(Bind::Let(s, o))
     }
 
-    pub fn pop_var(&mut self) -> (String, T) {
+    fn pop_var(&mut self) -> (String, T) {
         self.0.pop().map(|bind| {
             match bind {
                 Bind::Let(_, _) => panic!("tried to pop a let"),
@@ -61,7 +61,7 @@ impl<T> Env<T> {
         }).unwrap()
     }
 
-    pub fn pop_let(&mut self) -> (String, Option<(T, Box<Term<T>>)>) {
+    fn pop_let(&mut self) -> (String, Option<(T, Box<Term<T>>)>) {
         self.0.pop().map(|bind| {
             match bind {
                 Bind::Let(s, o) => (s, o),
