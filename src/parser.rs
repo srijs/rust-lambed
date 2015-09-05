@@ -78,15 +78,15 @@ pub fn primitive<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Primitive
     parser(token_integer).map(|i| Primitive::Integer(i)).parse_state(input)
 }
 
-fn term_val<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
+fn term_val<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
     parser(primitive).map(|val| Term::Val(val)).parse_state(input)
 }
 
-fn term_var<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
+fn term_var<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
     parser(token_identifier).map(|id| Term::Var(id)).parse_state(input)
 }
 
-fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
+fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
     between(
         parser(token_left_brace), parser(token_right_brace),
         (
@@ -102,7 +102,7 @@ fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
     }).parse_state(input)
 }
 
-fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
+fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
     (
         between(
             parser(token_bar), parser(token_bar),
@@ -121,7 +121,7 @@ fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
 }
 
 #[allow(unconditional_recursion)]
-pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped, I> {
+pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
     between(parser(token_left_paren), parser(token_right_paren), parser(term))
     .or(parser(term_val))
     .or(parser(term_var))
@@ -163,6 +163,6 @@ fn test_term_abs() {
     assert_eq!(result, Result::Ok((expr, "")));
 }
 
-pub fn parse_string(s: &String) -> Result<(Untyped, &str), ParseError<&str>> {
+pub fn parse_string(s: &String) -> Result<(Untyped<Primitive>, &str), ParseError<&str>> {
     parser(term).parse(s)
 }

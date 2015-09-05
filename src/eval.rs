@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use fixpoint::Fix;
 
-use super::term::{Primitive, Term};
+use super::term::Term;
 use super::zipper::Loc;
 
 #[derive (Debug, PartialEq, Eq)]
@@ -11,17 +11,17 @@ pub enum ReferenceError {
 }
 
 #[derive (Debug, PartialEq, Eq)]
-pub enum TypeError { NotAFunction(Primitive) }
+pub enum TypeError<V> { NotAFunction(V) }
 
 #[derive (Debug, PartialEq, Eq)]
-pub enum EvalError {
+pub enum EvalError<V> {
     ReferenceError(ReferenceError),
-    TypeError(TypeError)
+    TypeError(TypeError<V>)
 }
 
-type EvalResult<T> = Result<Fix<Loc<T>>, EvalError>;
+type EvalResult<T, V> = Result<Fix<Loc<T, V>>, EvalError<V>>;
 
-fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
+fn eval_shallow<T, V>(loc: Loc<T, V>) -> EvalResult<T, V> {
     match loc {
         Loc(Term::Var(s), c, mut e) => {
             match e.take_term(&s) {
@@ -32,7 +32,7 @@ fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
             }
         },
         Loc(Term::App(fun_box, arg_box), c, e) => {
-            let fun: Term<T> = *fun_box;
+            let fun: Term<T, V> = *fun_box;
             match fun {
                 Term::Val(val) => {
                     Result::Err(EvalError::TypeError(TypeError::NotAFunction(val)))
@@ -46,7 +46,7 @@ fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
             }
         },
         Loc(Term::Let(s, o, t_box), c, e) => {
-            let t: Term<T> = *t_box;
+            let t: Term<T, V> = *t_box;
             match t {
                 Term::Val(_) => Result::Ok(Fix::Pro(Loc(t, c, e))),
                 Term::Abs(abs_s, abs_y, abs_t_box) => {
@@ -69,14 +69,14 @@ fn eval_shallow<T>(loc: Loc<T>) -> EvalResult<T> {
     }
 }
 
-pub fn eval<T>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval<T, V>(term: Term<T, V>) -> Result<Term<T, V>, EvalError<V>> {
     // find the head normal form of the term,
     // which is equivalent to the fixpoint of
     // the eval_shallow function
     Loc::top(term).fix_result(eval_shallow)
 }
 
-pub fn eval_debug<T: Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
+pub fn eval_debug<T: Debug, V: Debug>(term: Term<T, V>) -> Result<Term<T, V>, EvalError<V>> {
     Loc::top(term).fix_result(|loc| {
         println!("{:?}", loc);
         eval_shallow(loc)
@@ -85,7 +85,7 @@ pub fn eval_debug<T: Debug>(term: Term<T>) -> Result<Term<T>, EvalError> {
 
 #[test]
 fn eval_val() {
-    let x = eval(Term::<()>::val_int(42));
+    let x = eval(Term::<(), _>::val_int(42));
     assert_eq!(x, Result::Ok(Term::val_int(42)));
 }
 
