@@ -55,11 +55,9 @@ impl<T> Term<T, Value> {
 
 }
 
-pub type Untyped<V> = Term<(), V>;
+impl<V> Term<(), V> {
 
-impl<V> Untyped<V> {
-
-    pub fn abs_many_untyped(first_id: String, many_ids: Vec<String>, term: Untyped<V>) -> Untyped<V> {
+    pub fn abs_many_untyped(first_id: String, many_ids: Vec<String>, term: Term<(), V>) -> Term<(), V> {
         let mut ids = many_ids;
         match ids.pop() {
             Option::None => Term::abs(first_id, (), term),
