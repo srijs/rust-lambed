@@ -1,19 +1,4 @@
-#[derive (Debug, PartialEq, Eq)]
-pub enum Primitive {
-    Integer(i64),
-    String(String)
-}
-
-#[derive (Debug, PartialEq, Eq)]
-pub enum PrimitiveType {
-    Integer, String
-}
-
-#[derive (Debug, PartialEq, Eq)]
-pub enum Type {
-    Val(PrimitiveType),
-    Abs(Box<Type>, Box<Type>)
-}
+use super::value::{AsValue, Value};
 
 #[derive (Debug, PartialEq, Eq)]
 pub enum Term<T, V> {
@@ -62,14 +47,10 @@ impl<T, V> Term<T, V> {
 
 }
 
-impl<T> Term<T, Primitive> {
+impl<T> Term<T, Value> {
 
-    pub fn val_int(x: i64) -> Term<T, Primitive> {
-        Term::Val(Primitive::Integer(x))
-    }
-
-    pub fn val_string(x: String) -> Term<T, Primitive> {
-        Term::Val(Primitive::String(x))
+    pub fn val<X: AsValue>(x: X) -> Term<T, Value> {
+        Term::Val(Value::new(x))
     }
 
 }

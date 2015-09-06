@@ -85,8 +85,8 @@ pub fn eval_debug<T: Debug, V: Debug>(term: Term<T, V>) -> Result<Term<T, V>, Ev
 
 #[test]
 fn eval_val() {
-    let x = eval(Term::<(), _>::val_int(42));
-    assert_eq!(x, Result::Ok(Term::val_int(42)));
+    let x = eval(Term::<(), _>::val(42 as i64));
+    assert_eq!(x, Result::Ok(Term::val(42 as i64)));
 }
 
 #[test]
@@ -97,8 +97,8 @@ fn eval_id() {
                 "x".to_string(), (),
                 Term::var("x".to_string())
             ),
-            Term::val_int(42)
+            Term::val(42 as i64)
         )
     );
-    assert_eq!(x, Result::Ok(Term::val_int(42)));
+    assert_eq!(x, Result::Ok(Term::val(42 as i64)));
 }

@@ -2,6 +2,7 @@
 extern crate combine;
 extern crate fixpoint;
 
+pub mod value;
 pub mod term;
 pub mod zipper;
 pub mod parser;
@@ -14,7 +15,7 @@ fn test_id() {
     let result = parsed.map(|(expr, _)| {
         eval::eval(expr)
     });
-    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val_int(5))));
+    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val(5 as i64))));
 }
 
 #[test]
@@ -24,7 +25,7 @@ fn test_id_2() {
     let result = parsed.map(|(expr, _)| {
         eval::eval(expr)
     });
-    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val_int(5))));
+    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val(5 as i64))));
 }
 
 #[test]
@@ -34,5 +35,5 @@ fn test_id_app() {
     let result = parsed.map(|(expr, _)| {
         eval::eval(expr)
     });
-    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val_int(5))));
+    assert_eq!(result, Result::Ok(Result::Ok(term::Term::val(5 as i64))));
 }

@@ -1,6 +1,7 @@
 use std::iter::FromIterator;
 
-use super::term::{Primitive, Untyped, Term};
+use super::value::Value;
+use super::term::{Untyped, Term};
 
 use combine::{Parser, ParserExt, State, ParseResult, ParseError, between, sep_by, letter, spaces, char, digit, many1, parser};
 use combine::primitives::{Stream};
@@ -74,19 +75,19 @@ fn test_parse_token_integer() {
     assert_eq!(result, Result::Ok((42, "")));
 }
 
-pub fn primitive<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Primitive, I> {
-    parser(token_integer).map(|i| Primitive::Integer(i)).parse_state(input)
+pub fn primitive<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Value, I> {
+    parser(token_integer).map(|i| Value::new(i)).parse_state(input)
 }
 
-fn term_val<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
+fn term_val<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Value>, I> {
     parser(primitive).map(|val| Term::Val(val)).parse_state(input)
 }
 
-fn term_var<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
+fn term_var<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Value>, I> {
     parser(token_identifier).map(|id| Term::Var(id)).parse_state(input)
 }
 
-fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
+fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Value>, I> {
     between(
         parser(token_left_brace), parser(token_right_brace),
         (
@@ -102,7 +103,7 @@ fn term_app<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primit
     }).parse_state(input)
 }
 
-fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
+fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Value>, I> {
     (
         between(
             parser(token_bar), parser(token_bar),
@@ -121,7 +122,7 @@ fn term_abs<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primit
 }
 
 #[allow(unconditional_recursion)]
-pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primitive>, I> {
+pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Value>, I> {
     between(parser(token_left_paren), parser(token_right_paren), parser(term))
     .or(parser(term_val))
     .or(parser(term_var))
@@ -133,7 +134,7 @@ pub fn term<I: Stream<Item=char>>(input: State<I>) -> ParseResult<Untyped<Primit
 #[test]
 fn test_term_val_int() {
     let result = parser(term).parse("42");
-    assert_eq!(result, Result::Ok((Term::val_int(42), "")));
+    assert_eq!(result, Result::Ok((Term::val(42 as i64), "")));
 }
 
 #[test]
@@ -163,6 +164,6 @@ fn test_term_abs() {
     assert_eq!(result, Result::Ok((expr, "")));
 }
 
-pub fn parse_string(s: &String) -> Result<(Untyped<Primitive>, &str), ParseError<&str>> {
+pub fn parse_string(s: &String) -> Result<(Untyped<Value>, &str), ParseError<&str>> {
     parser(term).parse(s)
 }
